@@ -1,0 +1,54 @@
+#Script to analyze data from The Cancer Genome Atlas SKM
+
+setwd("/Users/path/to/database/")
+
+
+# Loading
+library("readxl")
+
+# xlsx files
+dataBRCA <- read_excel("base.xlsx")
+
+
+header=T
+
+#create variables
+
+dataBRCA  <- within(dataBRCA, {
+  obesity <- NA
+  obesity [Initial_Patient_Weight<154.7] <-0
+  obesity [Initial_Patient_Weight>=181.5] <-1
+})
+#group classification: Obesity and Lean
+
+lean <- dataBRCA[which(dataBRCA$obesity==0),]
+obesity <- dataBRCA[which(dataBRCA$obesity==1),]
+
+#function for descriptive statistics
+quant_vars <- c("Diagnosis_Age")
+
+mystats <-function(x, na.omit=TRUE) {
+  if(na.omit)
+    x <- x[!is.na(x)]
+  m <- mean (x)
+  n <- length (x)
+  s <- sd (x)
+  min <- min(x)
+  max <- max (x)
+  q <- quantile (x, probs=c(0.25, 0.50, 0.75))
+  skew <- sum ((x-m)^3/s^3)/n
+  kurt <- sum ((x-m)^4/s^4)/n-3
+  return
+  (c(n=n, mean=m, stdev=s, min=min, max=max, quantiles=q, kurtosis=kurt, skew=skew))
+}
+#run descriptive
+
+stats_lean <- sapply(lean[quant_vars], mystats)
+stats_lean <- t(stats_lean)
+stats_lean <- round(stats_lean, digits=2)
+stats_lean
+
+stats_obesity <- sapply(obesity [quant_vars], mystats)
+stats_obesity <- t(stats_obesity)
+stats_obesity <- round(stats_obesity, digits=2)
+stats_obesity
